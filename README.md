@@ -149,6 +149,7 @@ Users can adjust frequency and wavelength, then immediately observe correspondin
 # Author
 
 Jian Kyle C. Hornales
+
 Bachelor of Science in Mathematics with Specialization in Computer Science
 
 ---
