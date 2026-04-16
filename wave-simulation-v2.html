@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Wave Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root{
+  --bg:#05080f;
+  --bg1:#090d18;
+  --bg2:#0d1220;
+  --glass:rgba(255,255,255,0.042);
+  --glass-hi:rgba(255,255,255,0.072);
+  --border:rgba(255,255,255,0.08);
+  --border-hi:rgba(255,255,255,0.16);
+
+  --c1:#22d3ee;   /* cyan  — wave 1 */
+  --c2:#f472b6;   /* pink  — wave 2 */
+  --cr:#a3e635;   /* lime  — resultant */
+  --ca:#fbbf24;   /* amber — wavelength annotation */
+  --ce:#34d399;   /* emerald — amplitude annotation */
+
+  --g1:rgba(34,211,238,0.18);
+  --g2:rgba(244,114,182,0.18);
+  --gr:rgba(163,230,53,0.18);
+
+  --tx0:#f8fafc;
+  --tx1:#94a3b8;
+  --tx2:#475569;
+
+  --ff:'Outfit',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+
+  --r4:4px; --r8:8px; --r12:12px; --r16:16px; --r20:20px; --r24:24px;
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--ff);
+  background:var(--bg);
+  color:var(--tx0);
+  overflow:hidden;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+#topbar{
+  flex-shrink:0;
+  height:52px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 16px;
+  background:rgba(5,8,15,0.85);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  z-index:100;
+}
+.tb-logo{
+  font-size:.95rem;
+  font-weight:700;
+  letter-spacing:-.01em;
+  color:var(--tx0);
+  white-space:nowrap;
+  display:flex;align-items:center;gap:7px;
+}
+.tb-logo-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--c1);
+  box-shadow:0 0 8px var(--c1),0 0 20px rgba(34,211,238,0.4);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.tb-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.tb-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.tb-pill-row{
+  display:flex;
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:var(--r8);
+  padding:3px;
+  gap:3px;
+}
+.tb-pill{
+  font-family:var(--fm);
+  font-size:.65rem;
+  font-weight:500;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:5px 11px;
+  border-radius:5px;
+  border:none;
+  cursor:pointer;
+  color:var(--tx1);
+  background:transparent;
+  transition:all .18s;
+  white-space:nowrap;
+}
+.tb-pill:hover{color:var(--tx0);background:var(--glass-hi)}
+.tb-pill.on{background:var(--c1);color:#05080f;box-shadow:0 0 10px var(--g1)}
+.tb-pill.on.p2{background:var(--c2);box-shadow:0 0 10px var(--g2)}
+.tb-spacer{flex:1}
+/* Presets */
+.preset-btn{
+  font-family:var(--fm);
+  font-size:.62rem;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  padding:5px 11px;
+  border-radius:var(--r8);
+  border:1px solid var(--border);
+  background:var(--glass);
+  color:var(--tx1);
+  cursor:pointer;
+  transition:all .18s;
+  white-space:nowrap;
+}
+.preset-btn:hover{border-color:var(--c1);color:var(--c1);box-shadow:0 0 10px var(--g1)}
+/* Play button */
+#playBtn{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 14px;
+  border-radius:var(--r8);
+  border:1px solid var(--border-hi);
+  background:var(--glass-hi);
+  color:var(--tx0);
+  font-family:var(--fm);
+  font-size:.65rem;
+  font-weight:500;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .18s;
+  flex-shrink:0;
+}
+#playBtn:hover{background:rgba(255,255,255,0.1);border-color:var(--border-hi)}
+#playBtn .pdot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cr);
+  box-shadow:0 0 8px var(--gr);
+  transition:all .25s;
+}
+#playBtn .pdot.off{background:var(--tx2);box-shadow:none}
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════ */
+#main{
+  flex:1;
+  display:grid;
+  grid-template-columns:220px 1fr 260px;
+  gap:0;
+  overflow:hidden;
+  min-height:0;
+}
+
+/* ═══════════════════════════════════════════
+   GLASS PANEL BASE
+═══════════════════════════════════════════ */
+.panel{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:var(--r12);
+  overflow:hidden;
+}
+
+/* ═══════════════════════════════════════════
+   LEFT SIDEBAR
+═══════════════════════════════════════════ */
+#left{
+  padding:12px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  border-right:1px solid var(--border);
+}
+#left::-webkit-scrollbar{width:4px}
+#left::-webkit-scrollbar-track{background:transparent}
+#left::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Live value card */
+.val-card{
+  border-radius:var(--r12);
+  border:1px solid var(--border);
+  background:var(--glass);
+  padding:10px 12px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color .3s;
+}
+.val-card::before{
+  content:'';
+  position:absolute;inset:0;
+  opacity:0;
+  transition:opacity .3s;
+}
+.val-card.c1-card::before{background:radial-gradient(circle at 0% 50%,rgba(34,211,238,0.08) 0%,transparent 70%)}
+.val-card.c2-card::before{background:radial-gradient(circle at 0% 50%,rgba(244,114,182,0.08) 0%,transparent 70%)}
+.val-card.cr-card::before{background:radial-gradient(circle at 0% 50%,rgba(163,230,53,0.08) 0%,transparent 70%)}
+.val-card:hover::before{opacity:1}
+.val-card:hover{border-color:var(--border-hi)}
+.vc-label{
+  font-family:var(--fm);
+  font-size:.58rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--tx2);
+  margin-bottom:4px;
+}
+.vc-val{
+  font-family:var(--fm);
+  font-size:1.3rem;
+  font-weight:500;
+  line-height:1;
+  transition:color .25s;
+}
+.vc-val.c1{color:var(--c1)}
+.vc-val.c2{color:var(--c2)}
+.vc-val.cr{color:var(--cr)}
+.vc-unit{font-size:.65rem;color:var(--tx2);margin-left:3px}
+.vc-sub{font-size:.68rem;color:var(--tx2);margin-top:4px;font-family:var(--fm)}
+
+/* Mini bar graph below value */
+.vc-bar{
+  height:2px;border-radius:1px;
+  margin-top:8px;
+  background:var(--border);
+  position:relative;overflow:hidden;
+}
+.vc-bar-fill{
+  position:absolute;left:0;top:0;height:100%;
+  border-radius:1px;
+  transition:width .15s ease;
+}
+.c1-fill{background:var(--c1);box-shadow:0 0 6px var(--c1)}
+.c2-fill{background:var(--c2);box-shadow:0 0 6px var(--c2)}
+.cr-fill{background:var(--cr);box-shadow:0 0 6px var(--cr)}
+
+/* Section label */
+.section-label{
+  font-family:var(--fm);
+  font-size:.58rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--tx2);
+  padding:2px 4px;
+  display:flex;align-items:center;gap:6px;
+}
+.section-label::before{content:'';flex:1;height:1px;background:var(--border)}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Concept panel */
+#conceptPanel{
+  border-radius:var(--r12);
+  border:1px solid var(--border);
+  background:var(--glass);
+  padding:12px;
+  flex:1;min-height:120px;
+}
+.cp-head{
+  font-size:.65rem;
+  font-weight:600;
+  color:var(--c1);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:8px;
+  font-family:var(--fm);
+}
+.cp-text{
+  font-size:.78rem;
+  color:var(--tx1);
+  line-height:1.6;
+  transition:opacity .3s;
+}
+.cp-formula{
+  margin-top:8px;
+  padding:7px 10px;
+  background:rgba(34,211,238,0.06);
+  border-left:2px solid var(--c1);
+  border-radius:0 var(--r4) var(--r4) 0;
+  font-family:var(--fm);
+  font-size:.72rem;
+  color:var(--c1);
+}
+
+/* ═══════════════════════════════════════════
+   CENTRE — CANVAS AREA
+═══════════════════════════════════════════ */
+#centre{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+}
+#canvasWrap{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+#gridCvs{z-index:1}
+#waveCvs{z-index:2}
+#annCvs{z-index:3}
+
+/* Challenge overlay */
+#challengeOverlay{
+  position:absolute;inset:0;
+  z-index:10;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(5,8,15,0.82);
+  backdrop-filter:blur(4px);
+}
+#challengeBox{
+  background:var(--bg2);
+  border:1px solid var(--border-hi);
+  border-radius:var(--r20);
+  padding:28px 32px;
+  text-align:center;
+  max-width:340px;
+}
+#challengeBox h2{font-size:1.2rem;font-weight:600;margin-bottom:8px}
+#challengeBox p{font-size:.82rem;color:var(--tx1);line-height:1.6;margin-bottom:18px}
+.ch-target{
+  font-family:var(--fm);
+  font-size:.75rem;
+  color:var(--c1);
+  background:rgba(34,211,238,0.07);
+  border:1px solid rgba(34,211,238,0.15);
+  border-radius:var(--r8);
+  padding:10px 14px;
+  margin-bottom:18px;
+  text-align:left;
+  line-height:2;
+}
+/* Score ring */
+.score-ring-wrap{margin:0 auto 16px;position:relative;width:80px;height:80px}
+#scoreRingSvg{width:80px;height:80px}
+.score-ring-bg{fill:none;stroke:var(--border);stroke-width:6}
+.score-ring-fg{fill:none;stroke:var(--cr);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .35s ease}
+#scoreNum{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fm);font-size:1.1rem;font-weight:500;color:var(--cr);
+}
+.btn-primary{
+  display:inline-block;
+  padding:9px 22px;
+  border-radius:var(--r8);
+  border:none;
+  background:var(--c1);
+  color:#05080f;
+  font-size:.82rem;
+  font-weight:600;
+  font-family:var(--ff);
+  cursor:pointer;
+  transition:all .18s;
+  margin-top:4px;
+}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-secondary{
+  display:inline-block;
+  padding:8px 18px;
+  border-radius:var(--r8);
+  border:1px solid var(--border-hi);
+  background:transparent;
+  color:var(--tx1);
+  font-size:.78rem;
+  font-family:var(--ff);
+  cursor:pointer;
+  transition:all .18s;
+  margin-left:8px;
+  margin-top:4px;
+}
+.btn-secondary:hover{border-color:var(--c1);color:var(--c1)}
+
+/* Bottom mini-bar under canvas */
+#canvasFooter{
+  flex-shrink:0;
+  height:38px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:0 18px;
+  border-top:1px solid var(--border);
+  background:rgba(5,8,15,0.6);
+}
+.cf-item{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--fm);
+  font-size:.6rem;
+  letter-spacing:.05em;
+  color:var(--tx2);
+}
+.cf-dot{width:7px;height:7px;border-radius:50%}
+
+/* ═══════════════════════════════════════════
+   RIGHT SIDEBAR
+═══════════════════════════════════════════ */
+#right{
+  padding:12px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  border-left:1px solid var(--border);
+}
+#right::-webkit-scrollbar{width:4px}
+#right::-webkit-scrollbar-track{background:transparent}
+#right::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Slider group */
+.src-head{
+  display:flex;align-items:center;gap:8px;
+  font-size:.7rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.src-led{
+  width:7px;height:7px;border-radius:50%;
+  flex-shrink:0;
+}
+
+.slider-row{
+  display:flex;flex-direction:column;gap:5px;
+  padding:9px 11px;
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:var(--r8);
+  transition:border-color .2s;
+}
+.slider-row:hover{border-color:var(--border-hi)}
+.sr-top{display:flex;justify-content:space-between;align-items:baseline}
+.sr-name{font-size:.68rem;color:var(--tx1);font-family:var(--fm);letter-spacing:.03em}
+.sr-val{font-family:var(--fm);font-size:.78rem;font-weight:500;color:var(--tx0)}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:3px;border-radius:99px;
+  background:rgba(255,255,255,0.07);
+  outline:none;cursor:pointer;margin:0;
+}
+input[type=range].s1::-webkit-slider-thumb{background:var(--c1);box-shadow:0 0 7px rgba(34,211,238,0.6)}
+input[type=range].s2::-webkit-slider-thumb{background:var(--c2);box-shadow:0 0 7px rgba(244,114,182,0.6)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--c1);
+  box-shadow:0 0 7px rgba(34,211,238,0.6);
+  transition:transform .12s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+input[type=range].s2::-moz-range-thumb{background:var(--c2)}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;border:none;
+  background:var(--c1);
+}
+
+/* Challenge mode panel */
+#challengePanel{
+  border-radius:var(--r12);
+  border:1px solid var(--border);
+  background:var(--glass);
+  padding:12px;
+}
+.cp2-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.cp2-title{
+  font-size:.68rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--cr);font-family:var(--fm);
+}
+.tag{
+  font-family:var(--fm);
+  font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:99px;
+  background:rgba(163,230,53,0.1);
+  border:1px solid rgba(163,230,53,0.2);
+  color:var(--cr);
+}
+#challengeStartBtn{
+  width:100%;
+  padding:9px;
+  border-radius:var(--r8);
+  border:1px solid rgba(163,230,53,0.25);
+  background:rgba(163,230,53,0.06);
+  color:var(--cr);
+  font-size:.75rem;
+  font-family:var(--ff);
+  font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+  text-align:center;
+}
+#challengeStartBtn:hover{
+  background:rgba(163,230,53,0.12);
+  border-color:rgba(163,230,53,0.4);
+  box-shadow:0 0 12px rgba(163,230,53,0.15);
+}
+.ch-desc{font-size:.72rem;color:var(--tx1);line-height:1.5;margin-bottom:10px}
+
+/* Divider */
+.div-line{height:1px;background:var(--border)}
+
+/* ═══════════════════════════════════════════
+   CANVAS ANNOTATIONS — SVG overlays
+═══════════════════════════════════════════ */
+#annSvg{
+  position:absolute;inset:0;
+  pointer-events:none;
+  z-index:5;
+  overflow:visible;
+}
+
+/* ═══════════════════════════════════════════
+   PARTICLE BURST (challenge success)
+═══════════════════════════════════════════ */
+.burst-particle{
+  position:absolute;
+  width:6px;height:6px;border-radius:50%;
+  pointer-events:none;
+  z-index:200;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:860px){
+  body{overflow:auto}
+  #main{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  #left,#right{border:none;border-top:1px solid var(--border);max-height:280px}
+  #canvasWrap{min-height:260px}
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .35s ease both}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ TOP BAR ══════════════ -->
+<div id="topbar">
+  <div class="tb-logo">
+    <div class="tb-logo-dot"></div>
+    Wave Lab
+  </div>
+  <div class="tb-sep"></div>
+
+  <!-- Wave type -->
+  <div class="tb-group">
+    <div class="tb-pill-row" id="typeToggle">
+      <button class="tb-pill on" data-val="transverse">Transverse</button>
+      <button class="tb-pill" data-val="longitudinal">Longitudinal</button>
+    </div>
+  </div>
+  <div class="tb-sep"></div>
+
+  <!-- Sim mode -->
+  <div class="tb-group">
+    <div class="tb-pill-row" id="modeToggle">
+      <button class="tb-pill on" data-val="single">Single</button>
+      <button class="tb-pill p2" data-val="interference">Interference</button>
+      <button class="tb-pill" data-val="standing">Standing</button>
+    </div>
+  </div>
+  <div class="tb-sep"></div>
+
+  <!-- Presets -->
+  <div class="tb-group">
+    <button class="preset-btn" data-preset="sound">Sound</button>
+    <button class="preset-btn" data-preset="ocean">Ocean</button>
+    <button class="preset-btn" data-preset="seismic">Seismic</button>
+  </div>
+
+  <div class="tb-spacer"></div>
+
+  <button id="playBtn">
+    <span class="pdot" id="pDot"></span>
+    <span id="pTxt">PAUSE</span>
+  </button>
+</div>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div id="main">
+
+  <!-- LEFT -->
+  <div id="left">
+    <div class="section-label">Live Values</div>
+
+    <div class="val-card c1-card">
+      <div class="vc-label">Frequency · Wave 1</div>
+      <div class="vc-val c1"><span id="vc-f1">1.0</span><span class="vc-unit">Hz</span></div>
+      <div class="vc-sub" id="vc-f1-sub">1 cycle / second</div>
+      <div class="vc-bar"><div class="vc-bar-fill c1-fill" id="bar-f1" style="width:18%"></div></div>
+    </div>
+
+    <div class="val-card c1-card">
+      <div class="vc-label">Amplitude · Wave 1</div>
+      <div class="vc-val c1"><span id="vc-a1">50</span><span class="vc-unit">px</span></div>
+      <div class="vc-sub" id="vc-a1-sub">Max displacement</div>
+      <div class="vc-bar"><div class="vc-bar-fill c1-fill" id="bar-a1" style="width:44%"></div></div>
+    </div>
+
+    <div class="val-card c1-card">
+      <div class="vc-label">Wavelength · Wave 1</div>
+      <div class="vc-val c1"><span id="vc-l1">150</span><span class="vc-unit">px</span></div>
+      <div class="vc-sub">Crest → Crest distance</div>
+      <div class="vc-bar"><div class="vc-bar-fill c1-fill" id="bar-l1" style="width:40%"></div></div>
+    </div>
+
+    <div class="val-card cr-card">
+      <div class="vc-label">Wave Speed v = f × λ</div>
+      <div class="vc-val cr"><span id="vc-spd">150</span><span class="vc-unit">px/s</span></div>
+      <div class="vc-sub" id="vc-spd-sub">1.0 × 150 = 150</div>
+      <div class="vc-bar"><div class="vc-bar-fill cr-fill" id="bar-spd" style="width:10%"></div></div>
+    </div>
+
+    <!-- Source 2 cards (hidden in single mode) -->
+    <div id="left-src2" style="display:none">
+      <div class="section-label">Wave 2</div>
+      <div class="val-card c2-card">
+        <div class="vc-label">Frequency · Wave 2</div>
+        <div class="vc-val c2"><span id="vc-f2">1.0</span><span class="vc-unit">Hz</span></div>
+        <div class="vc-bar"><div class="vc-bar-fill c2-fill" id="bar-f2" style="width:18%"></div></div>
+      </div>
+      <div style="height:8px"></div>
+      <div class="val-card c2-card">
+        <div class="vc-label">Amplitude · Wave 2</div>
+        <div class="vc-val c2"><span id="vc-a2">50</span><span class="vc-unit">px</span></div>
+        <div class="vc-bar"><div class="vc-bar-fill c2-fill" id="bar-a2" style="width:44%"></div></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">Concept</div>
+
+    <div id="conceptPanel">
+      <div class="cp-head" id="cp-head">Transverse Wave</div>
+      <div class="cp-text" id="cp-text">
+        In a transverse wave, particles oscillate <em>perpendicular</em> to the direction of wave travel. Light, water ripples, and seismic S-waves are examples.
+      </div>
+      <div class="cp-formula" id="cp-formula">v = f × λ</div>
+    </div>
+  </div>
+
+  <!-- CENTRE -->
+  <div id="centre">
+    <div id="canvasWrap">
+      <canvas id="gridCvs"></canvas>
+      <canvas id="waveCvs"></canvas>
+      <canvas id="annCvs"></canvas>
+
+      <!-- Challenge overlay -->
+      <div id="challengeOverlay">
+        <div id="challengeBox">
+          <h2>🎯 Challenge Complete!</h2>
+          <p id="ch-result-text">You matched the target wave.</p>
+          <div class="score-ring-wrap">
+            <svg id="scoreRingSvg" viewBox="0 0 80 80">
+              <circle class="score-ring-bg" cx="40" cy="40" r="32"/>
+              <circle class="score-ring-fg" id="scoreRingFg" cx="40" cy="40" r="32"
+                stroke-dasharray="201" stroke-dashoffset="201"
+                transform="rotate(-90 40 40)"/>
+            </svg>
+            <div id="scoreNum">0%</div>
+          </div>
+          <button class="btn-primary" id="chNextBtn">Next Challenge</button>
+          <button class="btn-secondary" id="chCloseBtn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas footer legend -->
+    <div id="canvasFooter">
+      <div class="cf-item">
+        <div class="cf-dot" style="background:var(--c1);box-shadow:0 0 5px var(--c1)"></div>
+        <span>Wave 1</span>
+      </div>
+      <div class="cf-item" id="cf-w2" style="display:none">
+        <div class="cf-dot" style="background:var(--c2);box-shadow:0 0 5px var(--c2)"></div>
+        <span>Wave 2</span>
+      </div>
+      <div class="cf-item" id="cf-rs" style="display:none">
+        <div class="cf-dot" style="background:var(--cr);box-shadow:0 0 5px var(--cr)"></div>
+        <span>Resultant</span>
+      </div>
+      <div class="cf-item" id="cf-ch" style="display:none">
+        <div class="cf-dot" style="background:var(--ca);box-shadow:0 0 5px var(--ca)"></div>
+        <span>Target</span>
+      </div>
+      <div style="flex:1"></div>
+      <div class="cf-item" id="cf-score" style="display:none">
+        <span style="color:var(--cr)">Score: </span>
+        <span id="cf-score-val" style="color:var(--cr);font-weight:500">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div id="right">
+    <div class="src-head">
+      <div class="src-led" style="background:var(--c1);box-shadow:0 0 6px var(--c1)"></div>
+      <span style="color:var(--c1)">Wave Source 1</span>
+    </div>
+
+    <div class="slider-row">
+      <div class="sr-top">
+        <span class="sr-name">Frequency (f)</span>
+        <span class="sr-val"><span id="d-f1">1.0</span> Hz</span>
+      </div>
+      <input type="range" class="s1" id="s-f1" min="0.1" max="5" step="0.1" value="1.0"/>
+    </div>
+    <div class="slider-row">
+      <div class="sr-top">
+        <span class="sr-name">Amplitude (A)</span>
+        <span class="sr-val"><span id="d-a1">50</span> px</span>
+      </div>
+      <input type="range" class="s1" id="s-a1" min="10" max="100" step="1" value="50"/>
+    </div>
+    <div class="slider-row">
+      <div class="sr-top">
+        <span class="sr-name">Wavelength (λ)</span>
+        <span class="sr-val"><span id="d-l1">150</span> px</span>
+      </div>
+      <input type="range" class="s1" id="s-l1" min="50" max="300" step="1" value="150"/>
+    </div>
+
+    <!-- Source 2 (interference mode) -->
+    <div id="right-src2" style="display:none">
+      <div class="div-line"></div>
+      <div class="src-head" style="margin-top:6px">
+        <div class="src-led" style="background:var(--c2);box-shadow:0 0 6px var(--c2)"></div>
+        <span style="color:var(--c2)">Wave Source 2</span>
+      </div>
+      <div class="slider-row" style="margin-top:4px">
+        <div class="sr-top">
+          <span class="sr-name">Frequency (f₂)</span>
+          <span class="sr-val"><span id="d-f2">1.0</span> Hz</span>
+        </div>
+        <input type="range" class="s2" id="s-f2" min="0.1" max="5" step="0.1" value="1.0"/>
+      </div>
+      <div class="slider-row">
+        <div class="sr-top">
+          <span class="sr-name">Amplitude (A₂)</span>
+          <span class="sr-val"><span id="d-a2">50</span> px</span>
+        </div>
+        <input type="range" class="s2" id="s-a2" min="10" max="100" step="1" value="50"/>
+      </div>
+      <div class="slider-row">
+        <div class="sr-top">
+          <span class="sr-name">Phase Shift (φ)</span>
+          <span class="sr-val"><span id="d-ph">0</span>°</span>
+        </div>
+        <input type="range" class="s2" id="s-ph" min="0" max="360" step="1" value="0"/>
+      </div>
+    </div>
+
+    <div class="div-line"></div>
+
+    <!-- Challenge panel -->
+    <div id="challengePanel">
+      <div class="cp2-head">
+        <span class="cp2-title">Challenge Mode</span>
+        <span class="tag">NEW</span>
+      </div>
+      <div class="ch-desc" id="ch-desc">Match the target wave by adjusting the sliders. A dashed guide appears on the canvas.</div>
+      <button id="challengeStartBtn">Start Challenge →</button>
+      <div style="margin-top:10px;display:none" id="ch-progress-wrap">
+        <div class="sr-top" style="margin-bottom:6px">
+          <span class="sr-name">Match Score</span>
+          <span class="sr-val cr" id="ch-score-display" style="color:var(--cr)">0%</span>
+        </div>
+        <div class="vc-bar" style="height:4px">
+          <div class="vc-bar-fill cr-fill" id="ch-score-bar" style="width:0%;transition:width .25s"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+// ───────────────────────────────────────────────────────────
+// 1. ELEMENT REFS
+// ───────────────────────────────────────────────────────────
+const gridCvs = document.getElementById('gridCvs');
+const waveCvs = document.getElementById('waveCvs');
+const annCvs  = document.getElementById('annCvs');
+const gCtx    = gridCvs.getContext('2d');
+const wCtx    = waveCvs.getContext('2d');
+const aCtx    = annCvs.getContext('2d');
+
+// Off-screen buffer for wave (double-buffer perf)
+const offCvs  = document.createElement('canvas');
+const offCtx  = offCvs.getContext('2d');
+
+// Sliders
+const sF1 = document.getElementById('s-f1');
+const sA1 = document.getElementById('s-a1');
+const sL1 = document.getElementById('s-l1');
+const sF2 = document.getElementById('s-f2');
+const sA2 = document.getElementById('s-a2');
+const sPh = document.getElementById('s-ph');
+
+// Display spans in sliders
+const dF1 = document.getElementById('d-f1'), dA1 = document.getElementById('d-a1'), dL1 = document.getElementById('d-l1');
+const dF2 = document.getElementById('d-f2'), dA2 = document.getElementById('d-a2'), dPh = document.getElementById('d-ph');
+
+// Value cards
+const vcF1  = document.getElementById('vc-f1'),  vcA1  = document.getElementById('vc-a1');
+const vcL1  = document.getElementById('vc-l1'),  vcSpd = document.getElementById('vc-spd');
+const vcF1s = document.getElementById('vc-f1-sub'), vcSpdS = document.getElementById('vc-spd-sub');
+const vcF2  = document.getElementById('vc-f2'),  vcA2  = document.getElementById('vc-a2');
+const barF1 = document.getElementById('bar-f1'), barA1 = document.getElementById('bar-a1');
+const barL1 = document.getElementById('bar-l1'), barSpd = document.getElementById('bar-spd');
+const barF2 = document.getElementById('bar-f2'), barA2 = document.getElementById('bar-a2');
+
+// Concept panel
+const cpHead = document.getElementById('cp-head');
+const cpText = document.getElementById('cp-text');
+const cpFormula = document.getElementById('cp-formula');
+
+
+// ───────────────────────────────────────────────────────────
+// 2. STATE
+// ───────────────────────────────────────────────────────────
+let waveType  = 'transverse';
+let simMode   = 'single';
+let isPlaying = true;
+let phase1 = 0, phase2 = 0;
+let lastTs = null, animId = null;
+
+// Longitudinal particle positions (pool — no per-frame allocation)
+const NPART = 200;
+const partX  = new Float32Array(NPART);
+const partY  = new Float32Array(NPART);
+const partBX = new Float32Array(NPART); // base X
+let partInit = false;
+
+// Phosphor trail (transverse only)
+const TRAIL_LEN = 8;
+const trail = []; // [{imageData}] ring buffer
+
+// Challenge state
+let challengeActive = false;
+let challengeTarget = {f:2,a:70,l:120}; // target params
+let challengeIdx    = 0;
+const CHALLENGES = [
+  {f:2.0, a:70, l:120, name:'Short-wavelength, high-amplitude'},
+  {f:0.5, a:30, l:250, name:'Long-wavelength, low-amplitude'},
+  {f:3.5, a:90, l:80,  name:'High-frequency, maximum amplitude'},
+  {f:1.0, a:50, l:200, name:'Medium wave'},
+];
+
+// Lerp tween queue for preset animation
+let tweens = []; // [{slider, from, to, t, dur}]
+
+
+// ───────────────────────────────────────────────────────────
+// 3. CANVAS SIZING
+// ───────────────────────────────────────────────────────────
+function syncCanvases() {
+  const wrap = document.getElementById('canvasWrap');
+  const W = wrap.clientWidth;
+  const H = wrap.clientHeight;
+  [gridCvs, waveCvs, annCvs, offCvs].forEach(c => {
+    c.width  = W;
+    c.height = H;
+  });
+  drawGrid();
+  partInit = false; // reinit particles on resize
+}
+syncCanvases();
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { syncCanvases(); if (!isPlaying) fullDraw(); }, 80);
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 4. GRID (drawn once, static)
+// ───────────────────────────────────────────────────────────
+function drawGrid() {
+  const W = gridCvs.width, H = gridCvs.height;
+  const c = gCtx;
+  c.clearRect(0,0,W,H);
+
+  // Faint dot grid
+  c.fillStyle = 'rgba(255,255,255,0.06)';
+  const step = 28;
+  for (let x = step; x < W; x += step) {
+    for (let y = step; y < H; y += step) {
+      c.beginPath(); c.arc(x, y, 0.8, 0, Math.PI*2); c.fill();
+    }
+  }
+
+  // Horizontal rest line
+  c.save();
+  c.setLineDash([6,8]);
+  c.strokeStyle = 'rgba(255,255,255,0.08)';
+  c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, H/2); c.lineTo(W, H/2); c.stroke();
+  c.restore();
+
+  // Subtle vignette
+  const vg = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.72);
+  vg.addColorStop(0, 'transparent');
+  vg.addColorStop(1, 'rgba(5,8,15,0.55)');
+  c.fillStyle = vg;
+  c.fillRect(0,0,W,H);
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 5. PARAM HELPERS
+// ───────────────────────────────────────────────────────────
+function p() {
+  return {
+    f1: parseFloat(sF1.value),
+    a1: parseInt(sA1.value),
+    l1: parseInt(sL1.value),
+    f2: parseFloat(sF2.value),
+    a2: parseInt(sA2.value),
+    ph: parseFloat(sPh.value) * Math.PI / 180,
+  };
+}
+
+function updateLabels() {
+  const v = p();
+  // Slider readouts
+  dF1.textContent = v.f1.toFixed(1); dA1.textContent = v.a1; dL1.textContent = v.l1;
+  dF2.textContent = v.f2.toFixed(1); dA2.textContent = v.a2; dPh.textContent = Math.round(parseFloat(sPh.value));
+
+  // Value cards
+  vcF1.textContent  = v.f1.toFixed(1);
+  vcA1.textContent  = v.a1;
+  vcL1.textContent  = v.l1;
+  const spd = (v.f1 * v.l1).toFixed(0);
+  vcSpd.textContent = spd;
+  vcF1s.textContent = v.f1.toFixed(1) + ' cycle' + (v.f1===1?'':'s') + ' / sec';
+  vcSpdS.textContent = v.f1.toFixed(1) + ' × ' + v.l1 + ' = ' + spd;
+  vcF2.textContent  = v.f2.toFixed(1);
+  vcA2.textContent  = v.a2;
+
+  // Bar fills (normalise to range)
+  barF1.style.width  = ((v.f1 - 0.1) / 4.9 * 100).toFixed(1) + '%';
+  barA1.style.width  = ((v.a1 - 10)  / 90  * 100).toFixed(1) + '%';
+  barL1.style.width  = ((v.l1 - 50)  / 250 * 100).toFixed(1) + '%';
+  barSpd.style.width = Math.min(parseFloat(spd)/1500*100, 100).toFixed(1) + '%';
+  barF2.style.width  = ((v.f2 - 0.1) / 4.9 * 100).toFixed(1) + '%';
+  barA2.style.width  = ((v.a2 - 10)  / 90  * 100).toFixed(1) + '%';
+
+  // Challenge score
+  if (challengeActive) updateChallengeScore();
+}
+updateLabels();
+
+
+// ───────────────────────────────────────────────────────────
+// 6. WAVE DRAWING — TRANSVERSE
+// ───────────────────────────────────────────────────────────
+function drawTransverseWave(c, W, H, f, a, l, ph, color, glowRgba, alpha) {
+  const cy = H / 2;
+  c.save();
+  c.globalAlpha = alpha;
+
+  // Glow halo pass
+  c.beginPath();
+  c.strokeStyle = glowRgba;
+  c.lineWidth = 18;
+  c.lineJoin = 'round';
+  for (let x = 0; x <= W; x += 2) {
+    const y = cy + a * Math.sin((2*Math.PI/l)*x - ph);
+    x===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+  }
+  c.stroke();
+
+  // Mid glow
+  c.beginPath();
+  c.strokeStyle = glowRgba.replace('0.18','0.35');
+  c.lineWidth = 6;
+  for (let x = 0; x <= W; x += 2) {
+    const y = cy + a * Math.sin((2*Math.PI/l)*x - ph);
+    x===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+  }
+  c.stroke();
+
+  // Sharp core
+  c.beginPath();
+  c.strokeStyle = color;
+  c.lineWidth = 2;
+  for (let x = 0; x <= W; x += 2) {
+    const y = cy + a * Math.sin((2*Math.PI/l)*x - ph);
+    x===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+  }
+  c.stroke();
+  c.restore();
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 7. WAVE DRAWING — LONGITUDINAL (dot particles)
+// ───────────────────────────────────────────────────────────
+function initParticles(W, H) {
+  const rows = 7;
+  const cols = Math.ceil(W / 9);
+  let idx = 0;
+  for (let r = 0; r < rows && idx < NPART; r++) {
+    const y = H * (0.15 + (r / (rows-1)) * 0.7);
+    const colCount = Math.min(cols, Math.floor((NPART - idx) / (rows - r)));
+    for (let c = 0; c < colCount && idx < NPART; c++) {
+      const baseX = (c / (colCount-1)) * W;
+      partBX[idx] = baseX;
+      partX[idx]  = baseX;
+      partY[idx]  = y;
+      idx++;
+    }
+  }
+  partInit = true;
+}
+
+function drawLongitudinal(c, W, H, f, a, l, ph, color, f2, a2, l2, ph2, isInterference) {
+  if (!partInit) initParticles(W, H);
+  c.save();
+
+  for (let i = 0; i < NPART; i++) {
+    const bx = partBX[i];
+    const ky = (2 * Math.PI / l);
+
+    // Displacement sum
+    let disp = a * 0.14 * Math.sin(ky * bx - ph);
+    if (isInterference) disp += a2 * 0.14 * Math.sin((2*Math.PI/l2) * bx - ph2);
+
+    partX[i] = bx + disp;
+
+    // Density: compression → bright, rarefaction → dim
+    const density1 = 0.5 + 0.5 * Math.cos(ky * bx - ph);
+    let density = density1;
+    if (isInterference) {
+      const density2 = 0.5 + 0.5 * Math.cos((2*Math.PI/l2) * bx - ph2);
+      density = (density1 * a + density2 * a2) / (a + a2);
+    }
+
+    const alpha = 0.12 + density * 0.85;
+    const radius = 1.2 + density * 2.2;
+
+    c.globalAlpha = alpha;
+    c.fillStyle   = color;
+    c.beginPath();
+    c.arc(partX[i], partY[i], radius, 0, Math.PI*2);
+    c.fill();
+  }
+  c.restore();
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 8. ANNOTATIONS (drawn on annCvs each frame)
+// ───────────────────────────────────────────────────────────
+function drawAnnotations(W, H, v) {
+  const c = aCtx;
+  c.clearRect(0,0,W,H);
+
+  if (waveType === 'longitudinal') return;
+
+  const cy = H/2;
+  const sx = 30;
+  const ex = sx + v.l1;
+
+  if (ex > W - 40) return;
+
+  // ── Wavelength bracket (amber) ──
+  const bY = cy + v.a1 + 38;
+  arrowBracket(c, sx, ex, bY, '#fbbf24', 'rgba(251,191,36,0.15)', 'λ = ' + v.l1 + ' px');
+
+  // ── Amplitude arrow (emerald) ──
+  const axX = ex + 24;
+  if (axX + 60 > W) return;
+  ampArrow(c, axX, cy, cy - v.a1, '#34d399', 'rgba(52,211,153,0.15)', 'A = ' + v.a1 + ' px');
+
+  // Challenge target overlay
+  if (challengeActive) {
+    const ct = challengeTarget;
+    const tey = cy - ct.a;
+    c.save();
+    c.setLineDash([5,6]);
+    c.strokeStyle = 'rgba(251,191,36,0.35)';
+    c.lineWidth = 1.5;
+    // Target sine ghost
+    c.beginPath();
+    for (let x = 0; x <= W; x += 3) {
+      const y = cy + ct.a * Math.sin((2*Math.PI/ct.l)*x);
+      x===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+    }
+    c.stroke();
+    c.setLineDash([]);
+    c.restore();
+  }
+}
+
+function arrowBracket(c, x1, x2, y, color, glow, label) {
+  c.save();
+  c.strokeStyle = color; c.fillStyle = color;
+  c.lineWidth = 1.5; c.globalAlpha = 0.85;
+
+  c.beginPath(); c.moveTo(x1,y); c.lineTo(x2,y); c.stroke();
+  [x1, x2].forEach(x => {
+    c.beginPath(); c.moveTo(x,y-5); c.lineTo(x,y+5); c.stroke();
+  });
+  arrowTip(c,x2-9,y,x2,y); arrowTip(c,x1+9,y,x1,y);
+
+  c.font = '500 11px JetBrains Mono, monospace';
+  c.textAlign = 'center';
+  const mx = (x1+x2)/2;
+  // Pill background
+  const tw = c.measureText(label).width;
+  c.globalAlpha = 0.18;
+  c.fillRect(mx-tw/2-5, y+6, tw+10, 16);
+  c.globalAlpha = 0.85;
+  c.fillText(label, mx, y+17);
+  c.restore();
+}
+
+function ampArrow(c, x, y1, y2, color, glow, label) {
+  c.save();
+  c.strokeStyle = color; c.fillStyle = color;
+  c.lineWidth = 1.5; c.globalAlpha = 0.85;
+
+  c.beginPath(); c.moveTo(x,y1); c.lineTo(x,y2); c.stroke();
+  arrowTip(c,x,y1-9,x,y1); arrowTip(c,x,y2+9,x,y2);
+
+  c.setLineDash([3,5]);
+  c.beginPath(); c.moveTo(x-7,y1); c.lineTo(x+7,y1); c.stroke();
+  c.setLineDash([]);
+
+  c.font = '500 11px JetBrains Mono, monospace';
+  c.textAlign = 'left';
+  c.fillText(label, x+9, (y1+y2)/2+4);
+  c.restore();
+}
+
+function arrowTip(c,x1,y1,x2,y2) {
+  const L=6, ang=Math.atan2(y2-y1,x2-x1);
+  c.beginPath();
+  c.moveTo(x2,y2);
+  c.lineTo(x2-L*Math.cos(ang-Math.PI/6), y2-L*Math.sin(ang-Math.PI/6));
+  c.lineTo(x2-L*Math.cos(ang+Math.PI/6), y2-L*Math.sin(ang+Math.PI/6));
+  c.closePath(); c.fill();
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 9. FULL DRAW (composites all layers)
+// ───────────────────────────────────────────────────────────
+function fullDraw() {
+  const W = waveCvs.width, H = waveCvs.height;
+  const c = offCtx;
+  const v = p();
+
+  c.clearRect(0,0,W,H);
+
+  if (waveType === 'transverse') {
+    if (simMode === 'single') {
+      drawTransverseWave(c, W, H, v.f1, v.a1, v.l1, phase1,
+        '#22d3ee', 'rgba(34,211,238,0.18)', 1);
+    } else if (simMode === 'standing') {
+      drawStanding(c,W,H,v);
+    } else {
+      // Both waves faded
+      drawTransverseWave(c, W, H, v.f1, v.a1, v.l1, phase1,
+        '#22d3ee', 'rgba(34,211,238,0.10)', 0.5);
+      drawTransverseWave(c, W, H, v.f2, v.a2, v.l1, phase2 + v.ph,
+        '#f472b6', 'rgba(244,114,182,0.10)', 0.5);
+      // Resultant
+      drawResultant(c, W, H, v);
+    }
+  } else {
+    // Longitudinal
+    drawLongitudinal(c, W, H,
+      v.f1, v.a1, v.l1, phase1, '#22d3ee',
+      v.f2, v.a2, v.l1, phase2 + v.ph,
+      simMode !== 'single');
+  }
+
+  // Blit off-screen → visible in one draw call
+  wCtx.clearRect(0,0,W,H);
+  wCtx.drawImage(offCvs, 0, 0);
+
+  // Annotations on top layer (separate canvas, no interference with wave blit)
+  drawAnnotations(W, H, v);
+}
+
+function drawResultant(c, W, H, v) {
+  const cy = H/2;
+  // Glow
+  c.save();
+  c.beginPath();
+  c.strokeStyle = 'rgba(163,230,53,0.22)';
+  c.lineWidth = 16;
+  for (let x = 0; x <= W; x += 2) {
+    const y1 = v.a1 * Math.sin((2*Math.PI/v.l1)*x - phase1);
+    const y2 = v.a2 * Math.sin((2*Math.PI/v.l1)*x - (phase2 + v.ph));
+    x===0 ? c.moveTo(x, cy+y1+y2) : c.lineTo(x, cy+y1+y2);
+  }
+  c.stroke();
+  // Core
+  c.beginPath();
+  c.strokeStyle = '#a3e635';
+  c.lineWidth = 2.5;
+  for (let x = 0; x <= W; x += 2) {
+    const y1 = v.a1 * Math.sin((2*Math.PI/v.l1)*x - phase1);
+    const y2 = v.a2 * Math.sin((2*Math.PI/v.l1)*x - (phase2 + v.ph));
+    x===0 ? c.moveTo(x, cy+y1+y2) : c.lineTo(x, cy+y1+y2);
+  }
+  c.stroke();
+  c.restore();
+}
+
+
+
+function drawStanding(c,W,H,v){
+  const cy=H/2;
+  c.save();
+  c.beginPath();
+  c.strokeStyle='rgba(163,230,53,0.22)'; c.lineWidth=16;
+  for(let x=0;x<=W;x+=2){
+    const y=2*v.a1*Math.sin((2*Math.PI/v.l1)*x)*Math.cos(phase1);
+    x===0?c.moveTo(x,cy+y):c.lineTo(x,cy+y);
+  }
+  c.stroke();
+  c.beginPath(); c.strokeStyle='#a3e635'; c.lineWidth=2.5;
+  for(let x=0;x<=W;x+=2){
+    const y=2*v.a1*Math.sin((2*Math.PI/v.l1)*x)*Math.cos(phase1);
+    x===0?c.moveTo(x,cy+y):c.lineTo(x,cy+y);
+  }
+  c.stroke();
+  c.fillStyle='rgba(251,191,36,.9)';
+  for(let x=0;x<=W;x+=v.l1/2){ c.beginPath(); c.arc(x,cy,2.5,0,Math.PI*2); c.fill(); }
+  c.restore();
+}
+
+// ───────────────────────────────────────────────────────────
+// 10. ANIMATION LOOP
+// ───────────────────────────────────────────────────────────
+function animate(ts) {
+  if (!isPlaying) return;
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
+  lastTs = ts;
+
+  const v = p();
+  phase1 = (phase1 + 2*Math.PI*v.f1*dt) % (2*Math.PI);
+  phase2 = (phase2 + 2*Math.PI*v.f2*dt) % (2*Math.PI);
+
+  // Process tweens
+  if (tweens.length) {
+    tweens = tweens.filter(tw => {
+      tw.t = Math.min(tw.t + dt / tw.dur, 1);
+      const ease = 1 - Math.pow(1 - tw.t, 3); // ease-out cubic
+      tw.slider.value = tw.from + (tw.to - tw.from) * ease;
+      return tw.t < 1;
+    });
+    updateLabels();
+  }
+
+  fullDraw();
+  animId = requestAnimationFrame(animate);
+}
+animId = requestAnimationFrame(animate);
+
+
+// ───────────────────────────────────────────────────────────
+// 11. PLAY / PAUSE
+// ───────────────────────────────────────────────────────────
+document.getElementById('playBtn').addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  document.getElementById('pTxt').textContent = isPlaying ? 'PAUSE' : 'PLAY';
+  document.getElementById('pDot').classList.toggle('off', !isPlaying);
+  if (isPlaying) {
+    lastTs = null;
+    animId = requestAnimationFrame(animate);
+  } else {
+    cancelAnimationFrame(animId);
+    fullDraw();
+  }
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 12. MODE / TYPE TOGGLES
+// ───────────────────────────────────────────────────────────
+document.getElementById('typeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('.tb-pill'); if (!btn) return;
+  waveType = btn.dataset.val;
+  document.querySelectorAll('#typeToggle .tb-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  partInit = false;
+  updateConcept();
+  if (!isPlaying) fullDraw();
+});
+
+document.getElementById('modeToggle').addEventListener('click', e => {
+  const btn = e.target.closest('.tb-pill'); if (!btn) return;
+  simMode = btn.dataset.val;
+  document.querySelectorAll('#modeToggle .tb-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+
+  const isInt = simMode !== 'single';
+  document.getElementById('right-src2').style.display = isInt ? 'block' : 'none';
+  document.getElementById('left-src2').style.display  = isInt ? 'block' : 'none';
+  document.getElementById('cf-w2').style.display      = isInt ? 'flex' : 'none';
+  document.getElementById('cf-rs').style.display      = isInt ? 'flex' : 'none';
+  updateConcept();
+  if (!isPlaying) fullDraw();
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 13. SLIDERS
+// ───────────────────────────────────────────────────────────
+let conceptDebounce;
+[sF1,sA1,sL1,sF2,sA2,sPh].forEach(s => {
+  s.addEventListener('input', () => {
+    updateLabels();
+    clearTimeout(conceptDebounce);
+    conceptDebounce = setTimeout(() => updateConceptForSlider(s.id), 600);
+    if (!isPlaying) fullDraw();
+  });
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 14. PRESETS (smooth tween)
+// ───────────────────────────────────────────────────────────
+const PRESETS = {
+  sound:   {f1:4.0, a1:30,  l1:80,  label:'Sound Wave',   note:'High frequency, short wavelength. Sound in air travels at ~343 m/s.'},
+  ocean:   {f1:0.3, a1:90,  l1:280, label:'Ocean Wave',   note:'Low frequency, long wavelength. Ocean swells can travel thousands of km.'},
+  seismic: {f1:0.2, a1:100, l1:200, label:'Seismic Wave', note:'Very low frequency, high amplitude. Earthquakes carry enormous energy.'},
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const pr = PRESETS[btn.dataset.preset];
+    if (!pr) return;
+    tweens = [];
+    [[sF1, pr.f1],[sA1, pr.a1],[sL1, pr.l1]].forEach(([sl, to]) => {
+      tweens.push({slider:sl, from:parseFloat(sl.value), to, t:0, dur:0.7});
+    });
+    // Show concept blurb
+    cpHead.textContent = pr.label;
+    cpText.textContent = pr.note;
+    cpFormula.textContent = 'v = ' + pr.f1.toFixed(1) + ' × ' + pr.l1 + ' = ' + (pr.f1*pr.l1).toFixed(0) + ' px/s';
+    if (!isPlaying) {
+      // If paused, manually drive tween
+      const ticker = setInterval(() => {
+        updateLabels();
+        fullDraw();
+        if (!tweens.length) clearInterval(ticker);
+      }, 16);
+    }
+  });
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 15. CONCEPT PANEL
+// ───────────────────────────────────────────────────────────
+const CONCEPTS = {
+  transverse_single: {
+    head:'Transverse Wave',
+    text:'Particles oscillate perpendicular to the wave\'s travel direction. Light, water ripples, and seismic S-waves are transverse waves.',
+    formula:'v = f × λ'
+  },
+  longitudinal_single: {
+    head:'Longitudinal Wave',
+    text:'Particles oscillate parallel to the wave\'s travel direction. Compressions (dense) and rarefactions (sparse) propagate the energy. Sound is a longitudinal wave.',
+    formula:'v = f × λ'
+  },
+  transverse_interference: {
+    head:'Wave Interference',
+    text:'When two waves overlap, their displacements add (superposition). Same phase → constructive (bigger wave). Opposite phase → destructive (cancellation).',
+    formula:'y_total = y₁ + y₂'
+  },
+  transverse_standing: {
+    head:'Standing Wave',
+    text:'Two identical waves traveling in opposite directions create fixed nodes (no motion) and antinodes (maximum motion). This is the basis of resonance in strings and air columns.',
+    formula:'y = 2A sin(kx) cos(ωt)'
+  },
+  longitudinal_interference: {
+    head:'Sound Interference',
+    text:'Two sound waves interfering create beats — rhythmic variations in loudness. Beat frequency = |f₁ − f₂|.',
+    formula:'f_beat = |f₁ − f₂|'
+  },
+};
+
+const SLIDER_CONCEPTS = {
+  's-f1': {head:'Frequency',    text:'Frequency (f) is the number of complete cycles per second, measured in Hertz (Hz). Higher frequency → more waves per second → higher pitch in sound.', formula:'T = 1/f (period)'},
+  's-a1': {head:'Amplitude',    text:'Amplitude (A) is the maximum displacement from the rest position. It determines the energy carried by the wave — double the amplitude means 4× the energy.', formula:'Energy ∝ A²'},
+  's-l1': {head:'Wavelength',   text:'Wavelength (λ) is the distance between two successive identical points (e.g. crest to crest). Longer wavelength → lower pitch in sound.', formula:'λ = v / f'},
+  's-f2': {head:'Beat Frequency', text:'When two waves of slightly different frequencies interfere, they produce beats — periodic variations in amplitude. The beat frequency equals the difference in the two frequencies.', formula:'f_beat = |f₁ − f₂|'},
+};
+
+function updateConcept() {
+  const key = waveType + '_' + simMode;
+  const c = CONCEPTS[key] || CONCEPTS.transverse_single;
+  cpHead.textContent    = c.head;
+  cpText.innerHTML      = c.text;
+  cpFormula.textContent = c.formula;
+}
+updateConcept();
+
+function updateConceptForSlider(id) {
+  const c = SLIDER_CONCEPTS[id];
+  if (!c) return;
+  cpHead.textContent    = c.head;
+  cpText.innerHTML      = c.text;
+  cpFormula.textContent = c.formula;
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 16. CHALLENGE MODE
+// ───────────────────────────────────────────────────────────
+function updateChallengeScore() {
+  const v = p();
+  const t = challengeTarget;
+
+  const fScore = 1 - Math.abs(v.f1 - t.f) / 5;
+  const aScore = 1 - Math.abs(v.a1 - t.a) / 90;
+  const lScore = 1 - Math.abs(v.l1 - t.l) / 250;
+  const score  = Math.max(0, Math.min(1, (fScore + aScore + lScore) / 3));
+  const pct    = Math.round(score * 100);
+
+  document.getElementById('ch-score-display').textContent = pct + '%';
+  document.getElementById('ch-score-bar').style.width     = pct + '%';
+  document.getElementById('cf-score-val').textContent     = pct + '%';
+
+  if (pct >= 90 && challengeActive) {
+    completeChallengeSuccess(pct);
+  }
+}
+
+function startChallenge() {
+  const ch = CHALLENGES[challengeIdx % CHALLENGES.length];
+  challengeTarget  = {f: ch.f, a: ch.a, l: ch.l};
+  challengeActive  = true;
+
+  document.getElementById('ch-desc').textContent =
+    'Target: ' + ch.name + '. Match the dashed wave on the canvas!';
+  document.getElementById('ch-progress-wrap').style.display = 'block';
+  document.getElementById('cf-ch').style.display    = 'flex';
+  document.getElementById('cf-score').style.display = 'flex';
+  document.getElementById('challengeStartBtn').textContent = 'Restart Challenge ↺';
+
+  // Update concept panel with hint
+  cpHead.textContent = '🎯 Challenge Hint';
+  cpText.innerHTML   = 'Target: f = ' + ch.f + ' Hz, A = ' + ch.a + ' px, λ = ' + ch.l + ' px. Adjust sliders to match the dashed guide.';
+  cpFormula.textContent = 'Match score = average closeness';
+}
+
+function completeChallengeSuccess(pct) {
+  challengeActive = false;
+  const overlay = document.getElementById('challengeOverlay');
+  overlay.style.display = 'flex';
+
+  // Animate score ring
+  const circumference = 2 * Math.PI * 32;
+  const ring = document.getElementById('scoreRingFg');
+  const offset = circumference * (1 - pct/100);
+  document.getElementById('scoreNum').textContent = pct + '%';
+  ring.style.strokeDashoffset = circumference;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      ring.style.transition = 'stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)';
+      ring.style.strokeDashoffset = offset;
+    });
+  });
+
+  document.getElementById('ch-result-text').textContent =
+    pct === 100 ? 'Perfect match! Outstanding work!' :
+    pct >= 95   ? 'Excellent! Almost perfect.' : 'Great job! Wave matched!';
+
+  // Particle burst
+  burstParticles();
+}
+
+document.getElementById('challengeStartBtn').addEventListener('click', startChallenge);
+
+document.getElementById('chNextBtn').addEventListener('click', () => {
+  challengeIdx++;
+  document.getElementById('challengeOverlay').style.display = 'none';
+  startChallenge();
+});
+document.getElementById('chCloseBtn').addEventListener('click', () => {
+  document.getElementById('challengeOverlay').style.display = 'none';
+  challengeActive = false;
+  document.getElementById('cf-ch').style.display    = 'none';
+  document.getElementById('cf-score').style.display = 'none';
+  document.getElementById('ch-progress-wrap').style.display = 'none';
+  document.getElementById('challengeStartBtn').textContent = 'Start Challenge →';
+  updateConcept();
+});
+
+
+// ───────────────────────────────────────────────────────────
+// 17. PARTICLE BURST (success animation — pure CSS/JS)
+// ───────────────────────────────────────────────────────────
+function burstParticles() {
+  const wrap = document.getElementById('canvasWrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  const cx = W/2, cy = H/2;
+  const colors = ['#22d3ee','#a3e635','#f472b6','#fbbf24','#34d399'];
+
+  for (let i = 0; i < 28; i++) {
+    const el  = document.createElement('div');
+    el.className = 'burst-particle';
+    const angle = (i / 28) * Math.PI * 2;
+    const speed = 80 + Math.random() * 140;
+    const col   = colors[i % colors.length];
+    el.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      background:${col};
+      box-shadow:0 0 6px ${col};
+      transform:translate(-50%,-50%);
+      transition: transform .9s cubic-bezier(.2,.8,.3,1), opacity .9s ease;
+    `;
+    wrap.appendChild(el);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transform = `translate(${Math.cos(angle)*speed - 3}px,${Math.sin(angle)*speed - 3}px)`;
+        el.style.opacity   = '0';
+      });
+    });
+    setTimeout(() => el.remove(), 950);
+  }
+}
+
+
+// ───────────────────────────────────────────────────────────
+// 18. INITIAL SETUP
+// ───────────────────────────────────────────────────────────
+updateLabels();
+</script>
+</body>
+</html>
